@@ -1,5 +1,5 @@
 // Sincronização somente do cardápio. Saldo, QR e histórico nunca são enviados.
-const MENU_ENDPOINT = 'https://raw.githubusercontent.com/michaelpatrickcasanova-civil/meu-ru/principal/cardapio.json';
+const MENU_ENDPOINT = './cardapio.json';
 const ISSUE_URL = 'https://github.com/michaelpatrickcasanova-civil/meu-ru/issues/new';
 const menuSyncNotice = document.createElement('div');
 menuSyncNotice.className = 'card stack';

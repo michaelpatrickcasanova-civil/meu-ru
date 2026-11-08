@@ -1,29 +1,7 @@
 {
-  "date": "2026-11-08",
-  "lunch": [
-    {
-      "name": "Arroz branco",
-      "portion": "200 g"
-    },
-    {
-      "name": "Feijão preto",
-      "portion": "160 g"
-    },
-    {
-      "name": "Frango acebolado",
-      "portion": "120 g"
-    }
-  ],
-  "dinner": [
-    {
-      "name": "Sopa mineira",
-      "portion": "350 g"
-    },
-    {
-      "name": "Carne assada",
-      "portion": "120 g"
-    }
-  ],
-  "updatedAt": "2026-11-08T16:00:00-03:00",
-  "source": "Cardápio de teste"
+  "date": "",
+  "lunch": [],
+  "dinner": [],
+  "updatedAt": "",
+  "source": "Comunidade do RU — cardápio sujeito a alterações"
 }

@@ -1,6 +1,6 @@
 # Meu RU — GitHub Pages
 
-Site estático com controle local de tickets e sincronização **somente do cardápio** via `cardapio.json` no GitHub.
+Site estático com controle local de tickets e sincronização **somente do cardápio** pelo serviço comunitário Meu RU. O arquivo `cardapio.json` anterior não é mais usado como fonte principal.
 
 ## Publicar
 
@@ -12,7 +12,7 @@ Site estático com controle local de tickets e sincronização **somente do card
 
 ## Publicar cardápio
 
-Edite `cardapio.json` no GitHub. O formato é:
+Na aba Cardápio, qualquer estudante pode colar a mensagem, revisar os itens e publicar anonimamente. O cardápio aparece imediatamente nos outros dispositivos conectados. A API aceita até três contribuições por origem de rede a cada 24 horas. Para manutenção manual, o formato dos pratos é:
 
 ```json
 {
@@ -24,12 +24,13 @@ Edite `cardapio.json` no GitHub. O formato é:
 }
 ```
 
-O site e o APK que carregar essa mesma fonte verão o mesmo cardápio publicado. Usuários podem propor sugestões pela aba Cardápio, que abre uma GitHub Issue (requer conta GitHub). O proprietário revisa e altera `cardapio.json`; Issues não publicam automaticamente.
+O site e o APK usam a mesma API: `https://meu-ru-cardapio-api-2026.raquel-scrvlh.chatgpt.site/api/menu`. Duas contestações por identificadores distintos de navegador ocultam um cardápio. Sem login, não é possível garantir que os identificadores representem duas pessoas diferentes.
 
 ## Privacidade e offline
 
 - Tickets, QR code, perfil e histórico ficam no armazenamento local do navegador, sem envio ao GitHub.
 - O service worker guarda a interface para uso offline após a primeira visita online.
 - A última versão do cardápio salva no navegador continua visível offline.
+- A câmera ao vivo depende de `BarcodeDetector`, disponível apenas em alguns navegadores. A importação de imagem preserva a foto se a leitura automática não funcionar.
 - Armazenamentos locais de navegador e APK são independentes; não sincronizam saldo ou QR.
 - Dados locais podem ser perdidos se o usuário limpar o armazenamento. Use backup.
