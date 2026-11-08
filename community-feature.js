@@ -71,8 +71,12 @@ $('#qrThumb').style.cursor='pointer';$('#walletQR').style.cursor='pointer';
 $('#qrThumb').onclick=()=>state.qr?showFullQR():tab('wallet');
 $('#walletQR').onclick=()=>state.qr?showFullQR():$('#qrFile').click();
 const qrActions=document.createElement('div');qrActions.className='stack';
-qrActions.innerHTML='<button class="secondary" id="qrNumber"># Gerar pelo número de cadastro</button><button class="secondary" id="qrCamera">◎ Ler QR com a câmera</button><button class="secondary" id="qrPhoto">📷 Tirar foto do QR code</button><input type="file" accept="image/*" capture="environment" id="qrCameraFile" class="hidden"><p class="note">Seu cadastro e QR ficam somente neste dispositivo. Confira se o leitor do RU aceita o código gerado.</p>';
+qrActions.innerHTML='<button class="secondary" id="qrNumber"># Gerar pelo número de cadastro</button><button class="secondary" id="qrCamera">◎ Ler QR com a câmera</button><button class="secondary" id="qrPhoto">📷 Tirar foto do QR code</button><button class="danger" id="qrRemove" style="display:none">Remover QR e cadastro deste aparelho</button><input type="file" accept="image/*" capture="environment" id="qrCameraFile" class="hidden"><p class="note">Seu cadastro e QR ficam somente neste dispositivo. Confira se o leitor do RU aceita o código gerado.</p>';
 $('#uploadQR').insertAdjacentElement('afterend',qrActions);
+const previousQRRender=render;
+render=function(){previousQRRender();$('#qrRemove').style.display=state.qr?'block':'none'};
+$('#qrRemove').onclick=()=>{if(!confirm('Apagar o QR e o cadastro salvos neste aparelho?'))return;state.qr=null;delete state.qrPayload;save();render();toast('QR e cadastro removidos deste aparelho.')};
+render();
 function saveQRPayload(value){
   try{
     const svg=window.MeuRUQrSVG(value);
@@ -81,7 +85,7 @@ function saveQRPayload(value){
     save();render();toast('QR code gerado e salvo!');return true;
   }catch{toast('Conteúdo longo demais para gerar. Guarde a foto original.');return false}
 }
-$('#qrNumber').onclick=()=>modal('Gerar QR pelo cadastro',`<p class="muted">Digite apenas os números, se tiver certeza de que o QR original codifica exatamente esse cadastro.</p><div class="field"><label>Número de cadastro</label><input id="qrCadastro" inputmode="numeric" pattern="[0-9]*" placeholder="Ex.: 6140" value="${/^[0-9]+$/.test(state.qrPayload||'')?state.qrPayload:''}"></div><button class="primary" id="generateQR">Gerar e salvar QR</button>`,()=>{$('#generateQR').onclick=()=>{const n=$('#qrCadastro').value.trim();if(!/^\d{1,24}$/.test(n)){toast('Digite de 1 a 24 dígitos.');return}if(saveQRPayload(n))closeModal()}});
+$('#qrNumber').onclick=()=>modal('Gerar QR pelo cadastro',`<p class="muted">Digite apenas os números, se tiver certeza de que o QR original codifica exatamente esse cadastro.</p><div class="field"><label>Número de cadastro</label><input id="qrCadastro" inputmode="numeric" pattern="[0-9]*" placeholder="Digite seu cadastro" value="${/^[0-9]+$/.test(state.qrPayload||'')?state.qrPayload:''}"></div><button class="primary" id="generateQR">Gerar e salvar QR</button>`,()=>{$('#generateQR').onclick=()=>{const n=$('#qrCadastro').value.trim();if(!/^\d{1,24}$/.test(n)){toast('Digite de 1 a 24 dígitos.');return}if(saveQRPayload(n))closeModal()}});
 async function tryDecodeQR(file){
   if(!('BarcodeDetector' in window))return null;
   try{
