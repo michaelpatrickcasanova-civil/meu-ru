@@ -1,5 +1,5 @@
-const CACHE = 'meuru-pwa-v4';
-const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
+const CACHE = 'meuru-pwa-v5';
+const CORE = ['./', './index.html', './auto-checkin.js', './manifest.webmanifest', './icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)));
   self.skipWaiting();

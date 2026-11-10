@@ -123,3 +123,37 @@ $('#qrCamera').onclick=async()=>{
   };
   const timer=setInterval(()=>{if(!$('#qrVideo')){clearInterval(timer);return}scan()},550);
 };
+
+// Registro opcional por abertura da carteirinha. O relógio do aparelho determina
+// a refeição; o registro local não confirma que o RU realmente leu o código.
+const autoCheckinKey='meuru-auto-checkin-v1';
+const autoCheckinCard=document.createElement('div');
+autoCheckinCard.className='card stack';
+autoCheckinCard.innerHTML='<strong>Check-in ao abrir o QR</strong><label style="display:flex;align-items:center;gap:12px;font-size:14px"><input type="checkbox" id="autoCheckinToggle" style="width:20px;height:20px"> Registrar automaticamente ao abrir o QR code</label><p class="note">Almoço: 11h às 14h. Jantar: 17h às 20h. A primeira refeição diária do cotista é grátis; a segunda custa 1 ticket. Use apenas quando for passar no RU: abrir a carteirinha registra a refeição, mesmo sem confirmação da catraca.</p>';
+$('#settings .settings').prepend(autoCheckinCard);
+$('#autoCheckinToggle').checked=localStorage.getItem(autoCheckinKey)==='true';
+$('#autoCheckinToggle').onchange=e=>{localStorage.setItem(autoCheckinKey,String(e.target.checked));toast(e.target.checked?'Check-in automático ativado.':'Check-in automático desativado.')};
+const showFullQRWithoutCheckin=showFullQR;
+showFullQR=function(){
+  if(!state.qr)return;
+  showFullQRWithoutCheckin();
+  const root=$('#qrRoot .fullqr');
+  if(!root||localStorage.getItem(autoCheckinKey)!=='true')return;
+  const clock=new Date();
+  const minutes=clock.getHours()*60+clock.getMinutes();
+  const meal=minutes>=11*60&&minutes<14*60?'Almoço':minutes>=17*60&&minutes<20*60?'Janta':null;
+  const day=[clock.getFullYear(),String(clock.getMonth()+1).padStart(2,'0'),String(clock.getDate()).padStart(2,'0')].join('-');
+  const info=document.createElement('small');
+  info.style.fontWeight='750';
+  if(!meal)info.textContent='Fora do horário do RU: nenhum check-in registrado.';
+  else if(mealFor(day,meal))info.textContent=meal+' de hoje já registrado. Nenhum ticket adicional descontado.';
+  else{
+    const charge=mealDelta(day);
+    if(charge<0&&calculate().balance<=0)info.textContent='Sem tickets pagos disponíveis: check-in não registrado. Ajuste o saldo.';
+    else{
+      add({type:'meal',name:meal,date:day});
+      info.textContent=meal+' registrado automaticamente: '+(charge===0?'refeição grátis.':'1 ticket descontado.');
+    }
+  }
+  root.insertBefore(info,root.querySelector('#leaveQR'));
+};

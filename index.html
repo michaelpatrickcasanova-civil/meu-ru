@@ -75,19 +75,38 @@ function parseMenu(text) {
     if (/^(card[aá]pio\s*(do|de)?\s*)?(almo[cç]o)\s*[:\-]?$/i.test(line)) { section='lunch'; continue; }
     if (/^(card[aá]pio\s*(do|de)?\s*)?(janta(r)?)\s*[:\-]?$/i.test(line)) { section='dinner'; continue; }
     if (!section) continue;
-    const match = line.match(/^(.+?)\s+(\d+(?:[,.]\d+)?)\s*(g|gramas?|ml|mililitros?|kg|l)\s*\.?$/i);
+    const match = line.match(/^(.+?)\s*(\d+(?:[,.]\d+)?)\s*(unidades?|unds?|und|g|gramas?|ml|mililitros?|kg|l)\s*\.?$/i);
     if (!match) continue;
     let name=match[1].replace(/^[-•*]+\s*/,'').trim();
     for (const [a,b] of menuCorrections) name=name.replace(new RegExp(a,'gi'),b);
     name=name[0].toLocaleUpperCase('pt-BR')+name.slice(1);
     const unit=match[3].toLowerCase();
-    data[section].push({name,portion:match[2].replace('.',',')+' '+(unit.startsWith('g')?'g':unit==='kg'?'kg':unit==='l'?'L':'ml')});
+    data[section].push({name,portion:match[2].replace('.',',')+' '+(/^(unidade|und)/.test(unit)?(Number(match[2])===1?'unidade':'unidades'):unit==='kg'?'kg':unit==='l'?'L':unit==='ml'||unit.startsWith('mili')?'ml':'g')});
   }
   return data;
 }
-function menuCategory(name){const n=name.toLowerCase();if(/alface|repolho|pepino|cenoura|salada/.test(n))return 'Saladas';if(/arroz|feijão|feijao|purê|legumes|sopa/.test(n))return 'Acompanhamentos';if(/frango|carne|suína|suino|lentilha|grão-de-bico|churrasquinho|isca/.test(n))return 'Pratos principais';if(/suco|água|agua|refresco/.test(n))return 'Bebidas';if(/melancia|laranja|gelatina|fruta|sobremesa/.test(n))return 'Sobremesas';return 'Outros'}
+function menuCategory(name,index,total){
+  // Modelo padrão do RU: 3 entradas, 3 bases, 1 guarnição,
+  // 2 proteínas animais, 1 opção vegana, 2 sobremesas e 1 bebida.
+  // No jantar, a terceira entrada pode ser sopa ou caldo.
+  if(total===13){
+    if(index<3)return 'Saladas e entradas';
+    if(index<7)return 'Acompanhamentos';
+    if(index<9)return 'Pratos principais';
+    if(index===9)return 'Opção vegana';
+    if(index<12)return 'Sobremesas';
+    return 'Bebidas';
+  }
+  const n=name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(/suco|refresco|bebida|agua/.test(n))return 'Bebidas';
+  if(/gelatina|pudim|pacoca|mariola|banana|laranja|maca|melancia|abacaxi|sobremesa|fruta/.test(n))return 'Sobremesas';
+  if(/curry vegetariano|soja bolonhesa|feijoada vegana|strogonoff de grao|bolinho de lentilha|lentilha c|grao.de.bico a bolonhesa/.test(n))return 'Opção vegana';
+  if(/frango|carne|suin|bovin|peixe|lombo|fricasse|churrasquinho|feijoada|isca/.test(n))return 'Pratos principais';
+  if(/alface|repolho|pepino|cenoura|salada|acelga|beterraba|tabule|couve|vinagrete/.test(n))return 'Saladas e entradas';
+  return 'Acompanhamentos';
+}
 function escapeMenu(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function mealPanel(label,icon,items){let groups={};for(const item of items){const key=menuCategory(item.name);(groups[key]??=[]).push(item)}return `<div class="menu-block"><div class="row" style="align-items:center;justify-content:space-between"><h3>${icon} ${label}</h3><span class="menu-pill">${items.length} itens</span></div>${Object.entries(groups).map(([group,rows])=>`<div class="menu-category">${group}</div><div class="dish-list">${rows.map(it=>`<div class="dish-row"><span>${escapeMenu(it.name)}</span><strong>${escapeMenu(it.portion)}</strong></div>`).join('')}</div>`).join('')}</div>`}
+function mealPanel(label,icon,items){let groups={};for(const [i,item] of items.entries()){const key=menuCategory(item.name,i,items.length);(groups[key]??=[]).push(item)}return `<div class="menu-block"><div class="row" style="align-items:center;justify-content:space-between"><h3>${icon} ${label}</h3><span class="menu-pill">${items.length} itens</span></div>${Object.entries(groups).map(([group,rows])=>`<div class="menu-category">${group}</div><div class="dish-list">${rows.map(it=>`<div class="dish-row"><span>${escapeMenu(it.name)}</span><strong>${escapeMenu(it.portion)}</strong></div>`).join('')}</div>`).join('')}</div>`}
 function refreshMenu(){const m=state.menu;$('#menuDateLabel').textContent=m?.date?new Date(m.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):'Nenhum cardápio salvo';$('#menuContent').innerHTML=m?mealPanel('Almoço','☀️',m.lunch)+mealPanel('Jantar','🌙',m.dinner):'<div class="empty">Nenhum cardápio registrado. Cole uma mensagem para começar.</div>'}
 $('#menuExample').onclick=()=>{$('#menuPaste').value=menuSample;toast('Exemplo preenchido. Clique em Organizar cardápio.')};
 $('#menuParse').onclick=()=>{const text=$('#menuPaste').value.trim(),date=$('#menuDate').value;if(!date||!text){toast('Informe a data e cole o cardápio.');return}const parsed=parseMenu(text);if(!parsed.lunch.length&&!parsed.dinner.length){toast('Não encontrei itens. Confira o formato da mensagem.');return}modal('Conferir cardápio',`<p class="muted">Reconheci ${parsed.lunch.length} itens no almoço e ${parsed.dinner.length} no jantar. Confira antes de salvar.</p><div style="max-height:45vh;overflow:auto">${mealPanel('Almoço','☀️',parsed.lunch)}${mealPanel('Jantar','🌙',parsed.dinner)}</div><button class="primary" id="saveMenu">Salvar cardápio</button>`,()=>{$('#saveMenu').onclick=()=>{state.menu={...parsed,date};save();refreshMenu();closeModal();toast('Cardápio organizado e salvo!')}})};
@@ -1544,4 +1563,4 @@ $('#qrCamera').onclick=async()=>{
   const timer=setInterval(()=>{if(!$('#qrVideo')){clearInterval(timer);return}scan()},550);
 };
 
-</script></body></html>
+</script><script src="./auto-checkin.js"></script></body></html>
